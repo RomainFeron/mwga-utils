@@ -166,21 +166,25 @@ int main() {
         exit(1);
     }
 
-    output_file << "Scaffold\tSize\tAlignability\tCount\tCount_no_N\n";
+    output_file << "Scaffold\tSize\tSize_no_N\tAlignability\tCount\tCount_no_N\n";
 
     // Output the data
     for (auto& scaffold: alignability) {
 
         std::vector<uint32_t> distribution(21);  // Distribution of alignability including Ns for the current scaffold
         std::vector<uint32_t> distribution_excluding_N(21);  // Distribution of alignability excluding Ns for the current scaffold
+        uint32_t scaffold_size_excluding_N = 0;
 
         for (auto nuc: scaffold.second) {
             ++distribution[nuc.alignability];
-            if (not nuc.is_N) ++distribution_excluding_N[nuc.alignability];
+            if (not nuc.is_N) {
+                ++distribution_excluding_N[nuc.alignability];
+                ++scaffold_size_excluding_N;
+            }
         }
 
         for (uint i=0; i<21; ++i) {
-            output_file << scaffold.first << "\t" << scaffold.second.size() << "\t" << i + 1 << "\t" << distribution[i] << "\t" << distribution_excluding_N[i] << "\n";
+            output_file << scaffold.first << "\t" << scaffold.second.size() << "\t" << scaffold_size_excluding_N << "\t" << i + 1 << "\t" << distribution[i] << "\t" << distribution_excluding_N[i] << "\n";
         }
 
     }
