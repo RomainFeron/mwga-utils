@@ -184,7 +184,8 @@ int main() {
         }
 
         for (uint i=0; i<21; ++i) {
-            output_file << scaffold.first << "\t" << scaffold.second.size() << "\t" << scaffold_size_excluding_N << "\t" << i + 1 << "\t" << distribution[i] << "\t" << distribution_excluding_N[i] << "\n";
+            output_file << scaffold.first << "\t" << scaffold.second.size() << "\t" << scaffold_size_excluding_N
+                        << "\t" << i + 1 << "\t" << distribution[i] << "\t" << distribution_excluding_N[i] << "\n";
         }
 
     }
