@@ -76,3 +76,6 @@ Thumbs.db
 build/
 *.user
 bin/
+tests*
+callgrind*
+*.pro
