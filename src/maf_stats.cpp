@@ -25,6 +25,8 @@ void MafStats::run() {
     uint32_t start = 0;
     uint32_t line_count = 0;
 
+    std::cerr << "Processing MAF file ..." << std::endl;
+
     // Read the MAF file
     while(std::getline(maf_file, line)) {
 
@@ -71,9 +73,9 @@ void MafStats::run() {
                                         start = uint(std::stoi(fields[2]));
 
                                         // Initialize a vector of the right size for the scaffold if this is the first time this scaffold is encountered
-                                        if (this->alignability.find(scaffold) == this->alignability.end()) {
-                                            this->alignability[scaffold].reserve(uint(std::stoi(fields[5])));
-                                            this->alignability[scaffold].resize(uint(std::stoi(fields[5])));
+                                        if (this->metrics.find(scaffold) == this->metrics.end()) {
+                                            this->metrics[scaffold].reserve(uint(std::stoi(fields[5])));
+                                            this->metrics[scaffold].resize(uint(std::stoi(fields[5])));
                                         }
 
                                         // Reset the columns vector that store indices for non-gap positions in the reference assembly
@@ -96,6 +98,8 @@ void MafStats::run() {
 
                                 if (new_block) {
 
+                                    this->metrics[scaffold][ref_position + start].ref_base = c;
+
                                     switch (c) {
 
                                         case '-':  // Gaps are excluded in all cases
@@ -104,7 +108,7 @@ void MafStats::run() {
 
                                         case 'N':  // When N, update the is_N field for this base
                                             columns.push_back(true);
-                                            this->alignability[scaffold][ref_position + start].is_N = true;  // ref_position is incremented for all bases except gaps
+                                            this->metrics[scaffold][ref_position + start].is_N = true;  // ref_position is incremented for all bases except gaps
                                             ++ref_position;
                                             break;
 
@@ -116,12 +120,12 @@ void MafStats::run() {
 
                                 } else {
 
-                                    if (c != '-') {  // Gaps are excluded from non-reference assemblies too
-
-                                        if (columns[position]) {
-                                            ++this->alignability[scaffold][ref_position + start].alignability;  // Increment alignability for this position
-                                            ++ref_position;
+                                    if (columns[position]) {
+                                        if (c != '-') {  // Gaps are excluded from non-reference assemblies too
+                                            ++this->metrics[scaffold][ref_position + start].alignability;  // Increment alignability for this position
+                                            this->metrics[scaffold][ref_position + start].identity += (c == this->metrics[scaffold][ref_position + start].ref_base);  // Increment identity for this position
                                         }
+                                        ++ref_position;
                                     }
                                 }
                                 ++position;
@@ -139,21 +143,23 @@ void MafStats::run() {
             }
         }
 
-        if (line_count % 1000000 == 0 and line_count != 0) std::cerr << "Processed <" << line_count / 1000000 << "> M. lines" << std::endl;
+        if (line_count % 1000000 == 0 and line_count != 0) std::cerr << "  - Processed " << line_count / 1000000 << " M. lines" << std::endl;
 
         ++line_count;
     }
 
     if (parameters.alignability_table_file_path != "") this->output_alignability_table();
     if (parameters.alignability_wig_file_path != "") this->output_alignability_wig();
+    if (parameters.identity_wig_file_path != "") this->output_identity_wig();
 }
 
 
 
 void MafStats::output_alignability_table() {
 
-    // Open output file
+    std::cerr << "Generating alignability distribution table..." << std::endl;
 
+    // Open output file
     std::ofstream output_file;
     output_file.open(parameters.alignability_table_file_path);
     if (not output_file.is_open()) {
@@ -163,7 +169,7 @@ void MafStats::output_alignability_table() {
     output_file << this->standard_output_header;
 
     // Output the data
-    for (auto& scaffold: this->alignability) {
+    for (auto& scaffold: this->metrics) {
 
         std::vector<uint32_t> distribution(21);  // Distribution of alignability including Ns for the current scaffold
         std::vector<uint32_t> distribution_excluding_N(21);  // Distribution of alignability excluding Ns for the current scaffold
@@ -190,19 +196,44 @@ void MafStats::output_alignability_table() {
 
 void MafStats::output_alignability_wig() {
 
+    std::cerr << "Generating alignability wig file ..." << std::endl;
+
     // Open wig file
-    std::ofstream wig_file;
+    std::ofstream output_file;
     output_file.open(parameters.alignability_wig_file_path);
-    if (not wig_file.is_open()) {
+    if (not output_file.is_open()) {
         std::cerr << "Error opening wig file <" << parameters.alignability_wig_file_path << ">." << std::endl;
         exit(1);
     }
 
     // Output the data
-    for (auto& scaffold: this->alignability) {
+    for (auto& scaffold: this->metrics) {
         output_file << "fixedStep chrom=" << split(scaffold.first, ".")[1] << " start=1 step=1\n";
         for (auto nuc: scaffold.second) {
             output_file << nuc.alignability + 1 << "\n";
+        }
+    }
+}
+
+
+
+void MafStats::output_identity_wig() {
+
+    std::cerr << "Generating identity wig file ..." << std::endl;
+
+    // Open wig file
+    std::ofstream output_file;
+    output_file.open(parameters.identity_wig_file_path);
+    if (not output_file.is_open()) {
+        std::cerr << "Error opening wig file <" << parameters.identity_wig_file_path << ">." << std::endl;
+        exit(1);
+    }
+
+    // Output the data
+    for (auto& scaffold: this->metrics) {
+        output_file << "fixedStep chrom=" << split(scaffold.first, ".")[1] << " start=1 step=1\n";
+        for (auto nuc: scaffold.second) {
+            output_file << std::setprecision(3) << (nuc.identity + 1) / (nuc.alignability + 1) << "\n";
         }
     }
 }

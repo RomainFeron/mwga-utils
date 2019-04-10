@@ -15,7 +15,9 @@
 // Data structure to store alignability data for a single nucleotide
 struct BaseData {
     uint16_t alignability = 0;  // Number of assemblies in which this base was aligned
+    float identity = 0;
     bool is_N = false;  // Boolean indicating whether this base is an N in the reference assembly
+    char ref_base = ' ';
 };
 
 
@@ -30,12 +32,13 @@ class MafStats {
 
         std::string standard_output_header = "Scaffold\tSize\tSize_no_N\tAlignability\tCount\tCount_no_N\n";
 
-        std::unordered_map<std::string, std::vector<BaseData>> alignability;  // Store alignability results
+        std::unordered_map<std::string, std::vector<BaseData>> metrics;  // Store alignability results
 
         MafStats();
         MafStats(int argc, char* argv[]);
         void run();
         void output_alignability_table();
         void output_alignability_wig();
+        void output_identity_wig();
 };
 

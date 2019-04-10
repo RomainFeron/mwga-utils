@@ -82,8 +82,9 @@ inline Parameters parse_args(int& argc, char** argv) {
     option->required();
     option->check(CLI::ExistingFile);
 
-    parser.add_option("-t, --alignability-table", parameters.alignability_table_file_path, "Path to an output file for alignability results");
-    parser.add_option("-w, --alignability-wig", parameters.alignability_wig_file_path, "Path to an wig output file for alignability results");
+    parser.add_option("-a, --alignability-table", parameters.alignability_table_file_path, "Path to an output file for alignability results");
+    parser.add_option("-A, --alignability-wig", parameters.alignability_wig_file_path, "Path to an wig output file for alignability results");
+    parser.add_option("-I, --identity-wig", parameters.identity_wig_file_path, "Path to an wig output file for identity results");
 
     // The parser throws an exception upon failure and implements an exit() method which output an error message and returns the exit code.
     try {
@@ -93,7 +94,7 @@ inline Parameters parse_args(int& argc, char** argv) {
         exit(parser.exit(e));
     }
 
-    if (parser.count("-t") == 0 and parser.count("-w") == 0) {
+    if (parser.count("-a") == 0 and parser.count("-A") == 0 and parser.count("-I") == 0) {
         formatter->set_column_widths(parser);
         std::cerr << "\nArgument error : at least one output file is required\n\n";
         std::cerr << parser.help();
