@@ -48,25 +48,3 @@ void rev_comp(const std::string& sequence, std::string& revcomp_sequence) {
         revcomp_sequence += revcomp_table[int(*it)];
     }
 }
-
-
-
-std::unordered_map<uint, uint> get_column_sex(std::unordered_map<std::string, bool>& popmap, const std::vector<std::string>& header) {
-
-    // Map with column number --> index of sex_count (0 = male, 1 = female, 2 = no sex)
-    std::unordered_map<uint, uint> sex_columns;
-
-    for (uint i=0; i<header.size(); ++i) {
-        if (popmap.find(header[i]) != popmap.end()) {
-            if (popmap[header[i]]) {
-                sex_columns[i] = 0; // Male --> column 0
-            } else {
-                sex_columns[i] = 1; // Female --> column 1
-            }
-        } else {
-            sex_columns[i] = 2; // First and second columns (id and sequence) are counted as no sex
-        }
-    }
-
-    return sex_columns;
-}

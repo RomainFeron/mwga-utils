@@ -1,50 +1,38 @@
 #pragma once
 #include <algorithm>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <math.h>
 #include <set>
-#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "output.h"
 #include "parser.h"
 #include "utils.h"
 
-// Data structure to store alignability data for a single nucleotide
-struct BaseData {
-    uint16_t alignability = 0;  // Number of assemblies in which this base was aligned
-    float identity = 0.0;
-    uint8_t alleles[6] {0, 0, 0, 0, 0, 0};
-    bool is_N = false;  // Boolean indicating whether this base is an N in the reference assembly
-    char ref_base = ' ';
-};
 
+typedef std::unordered_map<std::string, std::vector<BaseData>> MafMetrics;
 
-class MafStats {
+void run_mafstats(int argc, char* argv[]);
+void stats(Parameters& parameters);
 
-    public:
+typedef void (*command)(Parameters& parameters);
+static std::unordered_map<std::string, command> commands {{"stats", &stats}};
 
-        typedef void (MafStats::*command)();
-        std::unordered_map<std::string, command> commands {{"stats", &MafStats::stats}};
+//class MafStats {
 
-        Parameters parameters;
-        std::ifstream maf_file;
-        std::ofstream output_file;
-        std::ofstream wig_output_file;
+//    public:
 
-        std::string standard_output_header = "Scaffold\tSize\tSize_no_N\tAlignability\tCount\tCount_no_N\n";
+//        typedef void (MafStats::*command)();
+//        std::unordered_map<std::string, command> commands {{"stats", &MafStats::stats}};
 
-        std::unordered_map<std::string, std::vector<BaseData>> metrics;  // Store alignability results
+//        Parameters parameters;
+//        std::unordered_map<std::string, std::vector<BaseData>> metrics;  // Store alignability results
 
-        MafStats();
-        MafStats(int argc, char* argv[]);
-        void stats();
-        void output_alignability_table();
-        void output_alignability_wig();
-        void output_identity_wig();
-        void output_major_allele_wig();
-        void output_allele_count_wig();
-};
+//        MafStats();
+//        MafStats(int argc, char* argv[]);
+//        void stats();
+//        void generate_output();
+//};
 
