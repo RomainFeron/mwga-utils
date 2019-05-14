@@ -3,6 +3,12 @@
 MafStats::MafStats(int argc, char* argv[]) {
 
     this->parameters = parse_args(argc, argv);
+    (this->*commands[this->parameters.command])();  // Call the MafStats method corresponding to the specified CLI subcommand
+
+}
+
+
+void MafStats::stats() {
 
     // Open input file
     this->maf_file.open(parameters.maf_file_path);
@@ -11,10 +17,6 @@ MafStats::MafStats(int argc, char* argv[]) {
         std::cerr << "Error opening input file <" << parameters.maf_file_path << ">." << std::endl;
         exit(1);
     }
-}
-
-
-void MafStats::run() {
 
     std::string line, current_field, scaffold;
     std::vector<std::string> fields(6);

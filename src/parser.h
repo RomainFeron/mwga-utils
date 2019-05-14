@@ -76,28 +76,55 @@ inline Parameters parse_args(int& argc, char** argv) {
 
     // Main parser options
     parser.formatter(formatter);  // Set custom help format defined above
+    parser.require_subcommand();  // Check that there is a subcommand
     parser.failure_message(failure_message);  // Formatting for error message
 
-    CLI::Option* option = parser.add_option("-m, --maf-file", parameters.maf_file_path, "Path to a MAF file");
+    CLI::App* stats = parser.add_subcommand("stats", "Compute stats from MAF file");
+
+    CLI::Option* option = stats->add_option("-m, --maf-file", parameters.maf_file_path, "Path to a MAF file");
     option->required();
     option->check(CLI::ExistingFile);
 
-    parser.add_option("-a, --alignability-wig", parameters.alignability_wig_file_path, "Path to an wig output file for alignability results");
-    parser.add_option("-A, --alignability-table", parameters.alignability_table_file_path, "Path to an output file for alignability results");
-    parser.add_option("-i, --identity-wig", parameters.identity_wig_file_path, "Path to an wig output file for identity results");
-    parser.add_option("-l, --major-allele-wig", parameters.major_allele_wig_file_path, "Path to an wig output file for major allele results");
-    parser.add_option("-c, --allele-count-wig", parameters.allele_count_wig_file_path, "Path to an wig output file for allele count results");
+    stats->add_option("-a, --alignability-wig", parameters.alignability_wig_file_path, "Path to an wig output file for alignability results");
+    stats->add_option("-A, --alignability-table", parameters.alignability_table_file_path, "Path to an output file for alignability results");
+    stats->add_option("-i, --identity-wig", parameters.identity_wig_file_path, "Path to an wig output file for identity results");
+    stats->add_option("-l, --major-allele-wig", parameters.major_allele_wig_file_path, "Path to an wig output file for major allele results");
+    stats->add_option("-c, --allele-count-wig", parameters.allele_count_wig_file_path, "Path to an wig output file for allele count results");
 
     // The parser throws an exception upon failure and implements an exit() method which output an error message and returns the exit code.
     try {
+
         parser.parse(argc, argv);
+
     } catch (const CLI::ParseError &e) {
-        formatter->set_column_widths(parser);
+
+        if (parser.get_subcommands().size() > 0) {
+
+            std::string tmp = "";
+            for (auto opt: parser.get_subcommands()[0]->get_options()) {
+                opt->get_positional() ? tmp = opt->get_name()[0] : tmp = "-" + opt->get_snames()[0] + ", --" + opt->get_lnames()[0];
+                if (tmp.size() > formatter->column_widths[0]) formatter->column_widths[0] = static_cast<uint>(tmp.size());
+                tmp = opt->get_type_name();
+                if (tmp.size() > formatter->column_widths[1]) formatter->column_widths[1] = static_cast<uint>(tmp.size());
+                tmp = opt->get_description();
+                if (tmp.size() > formatter->column_widths[2]) formatter->column_widths[2] = static_cast<uint>(tmp.size());
+            }
+
+        } else {
+            formatter->column_widths[0] = 10;
+            formatter->column_widths[1] = 0;
+            formatter->column_widths[2] = 50;
+        }
+
         exit(parser.exit(e));
+
     }
 
-    if (parser.count("-a") == 0 and parser.count("-A") == 0 and parser.count("-i") == 0 and parser.count("-l") == 0 and parser.count("-c") == 0) {
-        formatter->set_column_widths(parser);
+    CLI::App* subcommand = parser.get_subcommands()[0];
+    parameters.command = subcommand->get_name();
+
+    if (subcommand->count("-a") + subcommand->count("-A") + subcommand->count("-i") + subcommand->count("-l") + subcommand->count("-c") == 0) {
+        formatter->set_column_widths(*subcommand);
         std::cerr << "\nArgument error : at least one output file is required\n\n";
         std::cerr << parser.help();
         exit(1);

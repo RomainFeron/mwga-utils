@@ -3,6 +3,9 @@
 
 struct Parameters {
 
+    // Subcommand to execute from CLI
+    std::string command = "";
+
     // I/O parameters
     std::string maf_file_path = "";
     std::string alignability_table_file_path = "";

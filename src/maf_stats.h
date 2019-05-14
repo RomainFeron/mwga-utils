@@ -12,7 +12,6 @@
 #include "parser.h"
 #include "utils.h"
 
-
 // Data structure to store alignability data for a single nucleotide
 struct BaseData {
     uint16_t alignability = 0;  // Number of assemblies in which this base was aligned
@@ -27,6 +26,9 @@ class MafStats {
 
     public:
 
+        typedef void (MafStats::*command)();
+        std::unordered_map<std::string, command> commands {{"stats", &MafStats::stats}};
+
         Parameters parameters;
         std::ifstream maf_file;
         std::ofstream output_file;
@@ -38,7 +40,7 @@ class MafStats {
 
         MafStats();
         MafStats(int argc, char* argv[]);
-        void run();
+        void stats();
         void output_alignability_table();
         void output_alignability_wig();
         void output_identity_wig();
