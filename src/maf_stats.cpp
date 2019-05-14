@@ -102,29 +102,81 @@ void MafStats::run() {
 
                                     switch (c) {
 
-                                        case '-':  // Gaps are excluded in all cases
-                                            columns.push_back(false);
+                                        case 'A':
+                                            ++this->metrics[scaffold][ref_position + start].alleles[0];
+                                            columns.push_back(true);
+                                            ++ref_position;
+                                            break;
+
+                                        case 'T':
+                                            ++this->metrics[scaffold][ref_position + start].alleles[1];
+                                            columns.push_back(true);
+                                            ++ref_position;
+                                            break;
+
+                                        case 'G':
+                                            ++this->metrics[scaffold][ref_position + start].alleles[2];
+                                            columns.push_back(true);
+                                            ++ref_position;
+                                            break;
+
+                                        case 'C':
+                                            ++this->metrics[scaffold][ref_position + start].alleles[3];
+                                            columns.push_back(true);
+                                            ++ref_position;
                                             break;
 
                                         case 'N':  // When N, update the is_N field for this base
                                             columns.push_back(true);
                                             this->metrics[scaffold][ref_position + start].is_N = true;  // ref_position is incremented for all bases except gaps
+                                            ++this->metrics[scaffold][ref_position + start].alleles[4];
                                             ++ref_position;
                                             break;
 
-                                        default:  // All other bases are included
-                                            columns.push_back(true);
-                                            ++ref_position;
+                                        case '-':  // Gaps are excluded in all cases
+                                            columns.push_back(false);
+                                            break;
+
+                                        default:
                                             break;
                                     }
 
                                 } else {
 
                                     if (columns[position]) {
+
                                         if (c != '-') {  // Gaps are excluded from non-reference assemblies too
                                             ++this->metrics[scaffold][ref_position + start].alignability;  // Increment alignability for this position
                                             this->metrics[scaffold][ref_position + start].identity += (c == this->metrics[scaffold][ref_position + start].ref_base);  // Increment identity for this position
                                         }
+
+                                        switch (c) {
+
+                                            case 'A':
+                                                ++this->metrics[scaffold][ref_position + start].alleles[0];
+                                                break;
+
+                                            case 'T':
+                                                ++this->metrics[scaffold][ref_position + start].alleles[1];
+                                                break;
+
+                                            case 'G':
+                                                ++this->metrics[scaffold][ref_position + start].alleles[2];
+                                                break;
+
+                                            case 'C':
+                                                ++this->metrics[scaffold][ref_position + start].alleles[3];
+                                                break;
+
+                                            case 'N':
+                                                ++this->metrics[scaffold][ref_position + start].alleles[4];
+                                                break;
+
+                                            case '-':
+                                                ++this->metrics[scaffold][ref_position + start].alleles[5];
+                                                break;
+                                        }
+
                                         ++ref_position;
                                     }
                                 }
@@ -151,6 +203,8 @@ void MafStats::run() {
     if (parameters.alignability_table_file_path != "") this->output_alignability_table();
     if (parameters.alignability_wig_file_path != "") this->output_alignability_wig();
     if (parameters.identity_wig_file_path != "") this->output_identity_wig();
+    if (parameters.major_allele_wig_file_path != "") this->output_major_allele_wig();
+    if (parameters.allele_count_wig_file_path != "") this->output_allele_count_wig();
 }
 
 
@@ -234,6 +288,88 @@ void MafStats::output_identity_wig() {
         output_file << "fixedStep chrom=" << split(scaffold.first, ".")[1] << " start=1 step=1\n";
         for (auto nuc: scaffold.second) {
             output_file << std::setprecision(3) << (nuc.identity + 1) / (nuc.alignability + 1) << "\n";
+        }
+    }
+}
+
+
+
+void MafStats::output_major_allele_wig() {
+
+    std::cerr << "Generating major allele wig file ..." << std::endl;
+
+    // Open wig file
+    std::ofstream output_file;
+    output_file.open(parameters.major_allele_wig_file_path);
+    if (not output_file.is_open()) {
+        std::cerr << "Error opening wig file <" << parameters.major_allele_wig_file_path << ">." << std::endl;
+        exit(1);
+    }
+
+    float major_allele = 0.0, total_count = 0.0;
+
+    // Output the data
+    for (auto& scaffold: this->metrics) {
+        output_file << "fixedStep chrom=" << split(scaffold.first, ".")[1] << " start=1 step=1\n";
+        for (auto nuc: scaffold.second) {
+            total_count = static_cast<float>(nuc.alleles[0]) + static_cast<float>(nuc.alleles[1]) + static_cast<float>(nuc.alleles[2]) +
+                          static_cast<float>(nuc.alleles[3]) + static_cast<float>(nuc.alleles[4]) + static_cast<float>(nuc.alleles[5]);
+            major_allele = static_cast<float>(*std::max_element(nuc.alleles, nuc.alleles + 6));
+            output_file << std::setprecision(3) << major_allele / total_count << "\n";
+        }
+    }
+}
+
+
+
+void MafStats::output_allele_count_wig() {
+
+    std::cerr << "Generating allele count wig file ..." << std::endl;
+
+    // Open wig file
+    std::ofstream output_file;
+    output_file.open(parameters.allele_count_wig_file_path);
+    if (not output_file.is_open()) {
+        std::cerr << "Error opening wig file <" << parameters.allele_count_wig_file_path << ">." << std::endl;
+        exit(1);
+    }
+
+    uint allele_count = 0;
+
+    // Output the data
+    for (auto& scaffold: this->metrics) {
+        output_file << "fixedStep chrom=" << split(scaffold.first, ".")[1] << " start=1 step=1\n";
+        for (auto nuc: scaffold.second) {
+
+            switch (nuc.ref_base) {
+
+                case 'A':
+                    ++nuc.alleles[0];
+                    break;
+
+                case 'T':
+                    ++nuc.alleles[1];
+                    break;
+
+                case 'G':
+                    ++nuc.alleles[2];
+                    break;
+
+                case 'C':
+                    ++nuc.alleles[3];
+                    break;
+
+                case 'N':
+                    ++nuc.alleles[4];
+                    break;
+
+                case '-':
+                    ++nuc.alleles[5];
+                    break;
+            }
+
+            allele_count = (nuc.alleles[0] > 0) + (nuc.alleles[1] > 0) + (nuc.alleles[2] > 0) + (nuc.alleles[3] > 0) + (nuc.alleles[4] > 0) + (nuc.alleles[5] > 0);
+            output_file << allele_count << "\n";
         }
     }
 }

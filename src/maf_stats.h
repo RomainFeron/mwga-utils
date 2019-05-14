@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -15,7 +16,8 @@
 // Data structure to store alignability data for a single nucleotide
 struct BaseData {
     uint16_t alignability = 0;  // Number of assemblies in which this base was aligned
-    float identity = 0;
+    float identity = 0.0;
+    uint8_t alleles[6] {0, 0, 0, 0, 0, 0};
     bool is_N = false;  // Boolean indicating whether this base is an N in the reference assembly
     char ref_base = ' ';
 };
@@ -40,5 +42,7 @@ class MafStats {
         void output_alignability_table();
         void output_alignability_wig();
         void output_identity_wig();
+        void output_major_allele_wig();
+        void output_allele_count_wig();
 };
 

@@ -78,13 +78,15 @@ inline Parameters parse_args(int& argc, char** argv) {
     parser.formatter(formatter);  // Set custom help format defined above
     parser.failure_message(failure_message);  // Formatting for error message
 
-    CLI::Option* option = parser.add_option("-i, --input-file", parameters.maf_file_path, "Path to a MAF file");
+    CLI::Option* option = parser.add_option("-m, --maf-file", parameters.maf_file_path, "Path to a MAF file");
     option->required();
     option->check(CLI::ExistingFile);
 
-    parser.add_option("-a, --alignability-table", parameters.alignability_table_file_path, "Path to an output file for alignability results");
-    parser.add_option("-A, --alignability-wig", parameters.alignability_wig_file_path, "Path to an wig output file for alignability results");
-    parser.add_option("-I, --identity-wig", parameters.identity_wig_file_path, "Path to an wig output file for identity results");
+    parser.add_option("-a, --alignability-wig", parameters.alignability_wig_file_path, "Path to an wig output file for alignability results");
+    parser.add_option("-A, --alignability-table", parameters.alignability_table_file_path, "Path to an output file for alignability results");
+    parser.add_option("-i, --identity-wig", parameters.identity_wig_file_path, "Path to an wig output file for identity results");
+    parser.add_option("-l, --major-allele-wig", parameters.major_allele_wig_file_path, "Path to an wig output file for major allele results");
+    parser.add_option("-c, --allele-count-wig", parameters.allele_count_wig_file_path, "Path to an wig output file for allele count results");
 
     // The parser throws an exception upon failure and implements an exit() method which output an error message and returns the exit code.
     try {
@@ -94,7 +96,7 @@ inline Parameters parse_args(int& argc, char** argv) {
         exit(parser.exit(e));
     }
 
-    if (parser.count("-a") == 0 and parser.count("-A") == 0 and parser.count("-I") == 0) {
+    if (parser.count("-a") == 0 and parser.count("-A") == 0 and parser.count("-i") == 0 and parser.count("-l") == 0 and parser.count("-c") == 0) {
         formatter->set_column_widths(parser);
         std::cerr << "\nArgument error : at least one output file is required\n\n";
         std::cerr << parser.help();
