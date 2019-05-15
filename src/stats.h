@@ -9,12 +9,8 @@
 #include <vector>
 #include "output.h"
 #include "parser.h"
-#include "stats.h"
 #include "utils.h"
 
+typedef std::unordered_map<std::string, std::vector<BaseData>> MafMetrics;
 
-void run_mafstats(int argc, char* argv[]);
-
-typedef void (*command)(Parameters& parameters);
-static std::unordered_map<std::string, command> commands {{"stats", &stats}};
-
+void stats(Parameters& parameters);

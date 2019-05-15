@@ -80,6 +80,7 @@ inline Parameters parse_args(int& argc, char** argv) {
     parser.failure_message(failure_message);  // Formatting for error message
 
     CLI::App* stats = parser.add_subcommand("stats", "Compute stats from MAF file");
+    CLI::App* coverage = parser.add_subcommand("cov", "Check for single coverage in reference species");
 
     CLI::Option* option = stats->add_option("-m, --maf-file", parameters.maf_file_path, "Path to a MAF file");
     option->required();
@@ -90,6 +91,12 @@ inline Parameters parse_args(int& argc, char** argv) {
     stats->add_option("-i, --identity-wig", parameters.identity_wig_file_path, "Path to an wig output file for identity results");
     stats->add_option("-l, --major-allele-wig", parameters.major_allele_wig_file_path, "Path to an wig output file for major allele results");
     stats->add_option("-c, --allele-count-wig", parameters.allele_count_wig_file_path, "Path to an wig output file for allele count results");
+
+    option = coverage->add_option("-m, --maf-file", parameters.maf_file_path, "Path to a MAF file");
+    option->required();
+    option->check(CLI::ExistingFile);
+
+    coverage->add_option("-r, --reference-species", parameters.alignability_wig_file_path, "Assembly code for the reference species");
 
     // The parser throws an exception upon failure and implements an exit() method which output an error message and returns the exit code.
     try {
