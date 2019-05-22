@@ -15,7 +15,7 @@ void coverage(Parameters& parameters) {
     std::vector<std::string> fields(6);
     bool new_block = true, new_field = true;
     uint8_t field_n = 0;
-    uint32_t start = 0, end = 0;
+    uint32_t start = 0, end = 0, size = 0;
     uint32_t line_count = 0;
 
     std::unordered_map<std::string, std::vector<uint>> coverage;
@@ -71,13 +71,12 @@ void coverage(Parameters& parameters) {
 
                                     scaffold = fields[1];
                                     start = uint(std::stoi(fields[2]));
-                                    end = start + uint(std::stoi(fields[2]));
+                                    end = start + uint(std::stoi(fields[3]));
 
                                     // Initialize a vector of the right size for the scaffold if this is the first time this scaffold is encountered
                                     if (coverage.find(scaffold) == coverage.end()) {
-                                        coverage[scaffold] = std::vector<uint>(uint(std::stoi(fields[5])));
-//                                        coverage[scaffold].reserve(uint(std::stoi(fields[5])));
-//                                        coverage[scaffold].resize(uint(std::stoi(fields[5])), 0);
+                                        size = static_cast<uint32_t>(std::stoi(fields[5]));
+                                        coverage[scaffold] = std::vector<uint>(size, 0);
                                     }
 
                                     for (auto i=start; i<end; ++i) ++coverage[scaffold][i];
@@ -98,16 +97,22 @@ void coverage(Parameters& parameters) {
             }
         }
 
-        if (line_count % 1000000 == 0 and line_count != 0) std::cerr << "  - Processed " << line_count / 1000000 << " M. lines" << std::endl;
+        if (line_count % 1000000 == 0 and line_count != 0) std::cerr << "  - Processed " << line_count << " lines" << std::endl;
 
         ++line_count;
     }
 
+    std::unordered_map<std::string, std::unordered_map<uint, uint>> distribution;
+
     for (auto& scaffold: coverage) {
         for (auto& nuc: scaffold.second) {
-            if (nuc != 1) {
-                std::cout << scaffold.first << " : " << nuc << std::endl;
-            }
+            ++distribution[scaffold.first][nuc];
+        }
+    }
+
+    for (auto& scaffold: distribution) {
+        for (auto& cov: scaffold.second) {
+            std::cout << scaffold.first << "\t" << cov.first << "\t" << cov.second << std::endl;
         }
     }
 
