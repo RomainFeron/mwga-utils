@@ -13,4 +13,4 @@
 #include "utils.h"
 
 
-void check_coverage(Parameters& parameters);
+void coverage(Parameters& parameters);

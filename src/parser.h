@@ -130,12 +130,15 @@ inline Parameters parse_args(int& argc, char** argv) {
     CLI::App* subcommand = parser.get_subcommands()[0];
     parameters.command = subcommand->get_name();
 
-    if (subcommand->count("-a") + subcommand->count("-A") + subcommand->count("-i") + subcommand->count("-l") + subcommand->count("-c") == 0) {
-        formatter->set_column_widths(*subcommand);
-        std::cerr << "\nArgument error : at least one output file is required\n\n";
-        std::cerr << parser.help();
-        exit(1);
+    if (parameters.command == "stats") {
+        if (subcommand->count("-a") + subcommand->count("-A") + subcommand->count("-i") + subcommand->count("-l") + subcommand->count("-c") == 0) {
+            formatter->set_column_widths(*subcommand);
+            std::cerr << "\nArgument error : at least one output file is required\n\n";
+            std::cerr << parser.help();
+            exit(1);
+        }
     }
+
 
     return parameters;
 }
