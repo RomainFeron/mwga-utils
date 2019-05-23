@@ -1,6 +1,6 @@
-#include "coverage.h"
+#include "add_missing_region.h"
 
-void coverage(Parameters& parameters) {
+void add_missing_regions(Parameters& parameters) {
 
     // Open input file
     std::ifstream maf_file;
@@ -20,10 +20,16 @@ void coverage(Parameters& parameters) {
 
     std::unordered_map<std::string, std::vector<uint>> coverage;
 
+    std::unordered_map<std::string, uint> scaffold_lengths;
+
+    std::string o_line = "";
+
     std::cerr << "Processing MAF file ..." << std::endl;
 
     // Read the MAF file
     while(std::getline(maf_file, line)) {
+
+        o_line = "";
 
         if (line.size() > 0) {
 
@@ -31,6 +37,7 @@ void coverage(Parameters& parameters) {
 
                 new_block = true;  // Record that a new block has started
                 scaffold = "";
+                o_line = line;
 
             } else if (line[0] == 's') {  // Lines starting with 's' are sequence lines inside a block
 
@@ -50,6 +57,8 @@ void coverage(Parameters& parameters) {
                                 current_field = "";  // Current field is reset to "" when a field ends
                             }
 
+                            o_line += c;
+
                             break;
 
                         default:
@@ -61,6 +70,10 @@ void coverage(Parameters& parameters) {
 
                                 current_field += c;  // Update current field string except for the sequence field
 
+                                if (field_n < 5) o_line += c; else o_line += static_cast<char>(std::toupper(c));
+
+                            } else {
+                                o_line += static_cast<char>(std::toupper(c));
                             }
 
                             if (new_field) { // Check if this is the start of a field
@@ -77,6 +90,7 @@ void coverage(Parameters& parameters) {
                                     if (coverage.find(scaffold) == coverage.end()) {
                                         size = static_cast<uint32_t>(std::stoi(fields[5]));
                                         coverage[scaffold] = std::vector<uint>(size, 0);
+                                        scaffold_lengths[scaffold] = size;
                                     }
 
                                     for (auto i=start; i<end; ++i) ++coverage[scaffold][i];
@@ -94,30 +108,75 @@ void coverage(Parameters& parameters) {
                     new_block = false;
                 }
 
+            } else {
+                o_line = line;
             }
         }
 
         if (line_count % 1000000 == 0 and line_count != 0) std::cerr << "  - Processed " << line_count << " lines" << std::endl;
 
         ++line_count;
+
+        std::cout << o_line << "\n";
     }
 
-    std::unordered_map<std::string, std::unordered_map<uint, uint>> distribution;
 
-    uint i=0;
+    std::unordered_map<std::string, std::string> genome;
+    std::ifstream genome_file;
+    genome_file.open(parameters.genome_file_path);
+
+    std::string fa_header = "", fa_sequence = "";
+    std::vector<std::string> tmp;
+    while (std::getline(genome_file, line)) {
+        if (line[0] == '>') {
+            if (fa_header != "") genome[fa_header] = fa_sequence;
+            fa_header = line.substr(1);
+            tmp = split(fa_header, ":");
+            fa_header = tmp[0] + "." + tmp[1];
+            fa_sequence = "";
+        } else {
+            fa_sequence += line;
+        }
+    }
+    genome[fa_header] = fa_sequence;
+
+    for (auto s: genome) std::cerr << s.first << " : " << s.second.size() << std::endl;
+
+
+    std::string sequence = "";
+    uint seq_start = 0, seq_length = 0;
+    bool new_sequence = true;
     for (auto& scaffold: coverage) {
-        i=0;
-        for (auto& nuc: scaffold.second) {
-            ++distribution[scaffold.first][nuc];
-            if (nuc == 0) std::cout << scaffold.first << " : " << i << std::endl;
-            ++i;
+        sequence = "";
+        seq_start = 0;
+        seq_length = 0;
+        new_sequence = true;
+        for (uint i=0; i<scaffold.second.size(); ++i) {
+            if (scaffold.second[i] == 1) {
+                if (not new_sequence) {
+                    sequence = genome[scaffold.first].substr(seq_start, seq_length);
+                    std::transform(sequence.begin(), sequence.end(), sequence.begin(), ::toupper);
+                    std::cout << "a score=NA\ns " << scaffold.first << " " << seq_start << " " << seq_length << " + " << scaffold_lengths[scaffold.first] << " " << sequence << "\n\n";
+                }
+                sequence = "";
+                seq_start = 0;
+                seq_length = 0;
+                new_sequence = true;
+            } else {
+                if (new_sequence) {
+                    seq_start = i;
+                    new_sequence = false;
+                }
+                ++seq_length;
+            }
         }
-    }
 
-    for (auto& scaffold: distribution) {
-        for (auto& cov: scaffold.second) {
-            std::cout << scaffold.first << "\t" << cov.first << "\t" << cov.second << std::endl;
+        if (not new_sequence) {
+            sequence = genome[scaffold.first].substr(seq_start, seq_length);
+            std::transform(sequence.begin(), sequence.end(), sequence.begin(), ::toupper);
+            std::cout << "a score=NA\ns " << scaffold.first << " " << seq_start << " " << seq_length << " + " << scaffold_lengths[scaffold.first] << " " << sequence << "\n\n";
         }
+
     }
 
     maf_file.close();

@@ -11,4 +11,4 @@
 #include "parser.h"
 #include "utils.h"
 
-void coverage(Parameters& parameters);
+void add_missing_regions(Parameters& parameters);

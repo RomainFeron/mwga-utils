@@ -81,6 +81,7 @@ inline Parameters parse_args(int& argc, char** argv) {
 
     CLI::App* stats = parser.add_subcommand("stats", "Compute stats from MAF file");
     CLI::App* coverage = parser.add_subcommand("cov", "Check for single coverage in reference species");
+    CLI::App* missing_regions = parser.add_subcommand("complete", "Add missing regions from the reference assembly to the MAF file");
 
     CLI::Option* option = stats->add_option("-m, --maf-file", parameters.maf_file_path, "Path to a MAF file");
     option->required();
@@ -96,7 +97,13 @@ inline Parameters parse_args(int& argc, char** argv) {
     option->required();
     option->check(CLI::ExistingFile);
 
-    coverage->add_option("-r, --reference-species", parameters.alignability_wig_file_path, "Assembly code for the reference species");
+    option = missing_regions->add_option("-m, --maf-file", parameters.maf_file_path, "Path to a MAF file");
+    option->required();
+    option->check(CLI::ExistingFile);
+
+    option = missing_regions->add_option("-r, --ref-file", parameters.genome_file_path, "Path to a genome file for the reference species");
+    option->required();
+    option->check(CLI::ExistingFile);
 
     // The parser throws an exception upon failure and implements an exit() method which output an error message and returns the exit code.
     try {
@@ -138,7 +145,6 @@ inline Parameters parse_args(int& argc, char** argv) {
             exit(1);
         }
     }
-
 
     return parameters;
 }

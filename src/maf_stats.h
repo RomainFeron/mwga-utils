@@ -7,6 +7,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "add_missing_region.h"
 #include "coverage.h"
 #include "output.h"
 #include "parser.h"
@@ -18,5 +19,6 @@ void run_mafstats(int argc, char* argv[]);
 
 typedef void (*command)(Parameters& parameters);
 static std::unordered_map<std::string, command> commands {{"stats", &stats},
-                                                          {"cov", &coverage}};
+                                                          {"cov", &coverage},
+                                                          {"complete", &add_missing_regions}};
 
