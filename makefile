@@ -15,13 +15,16 @@ CPP = $(wildcard $(SRC)/*.cpp) $(wildcard $(SRC)/*/*.cpp)
 LIBCPP = $(wildcard $(INCLUDE)/*/*.cpp)
 
 # Targets
-TARGETS = test
+TARGETS = metrics
 
 # Rules
 all: init $(TARGETS)
 
 test: $(SRC)/test.cpp $(SRC)/maf_parser.cpp $(INCLUDE)/docopt/docopt.cpp
 	$(CC) $(CFLAGS) -I $(INCLUDE) -o $(BIN)/test $^ $(LDFLAGS)
+
+metrics: $(SRC)/metrics.cpp $(SRC)/maf_parser.cpp $(INCLUDE)/docopt/docopt.cpp
+	$(CC) $(CFLAGS) -I $(INCLUDE) -o $(BIN)/metrics $^ $(LDFLAGS)
 
 # $(TARGET): $(OBJS) $(LIBOBJS)
 # 	$(CC) $(CFLAGS) -I $(INCLUDE) -o $(BIN)/$(TARGET) $^ $(LDFLAGS)
