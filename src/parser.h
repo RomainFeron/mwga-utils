@@ -82,6 +82,7 @@ inline Parameters parse_args(int& argc, char** argv) {
     CLI::App* stats = parser.add_subcommand("stats", "Compute stats from MAF file");
     CLI::App* coverage = parser.add_subcommand("cov", "Check for single coverage in reference species");
     CLI::App* missing_regions = parser.add_subcommand("complete", "Add missing regions from the reference assembly to the MAF file");
+    CLI::App* bp_aligned= parser.add_subcommand("aligned", "Compute the number of BP aligned for each species");
 
     CLI::Option* option = stats->add_option("-m, --maf-file", parameters.maf_file_path, "Path to a MAF file");
     option->required();
@@ -98,6 +99,10 @@ inline Parameters parse_args(int& argc, char** argv) {
     option->check(CLI::ExistingFile);
 
     option = missing_regions->add_option("-m, --maf-file", parameters.maf_file_path, "Path to a MAF file");
+    option->required();
+    option->check(CLI::ExistingFile);
+
+    option = bp_aligned->add_option("-m, --maf-file", parameters.maf_file_path, "Path to a MAF file");
     option->required();
     option->check(CLI::ExistingFile);
 
