@@ -14,35 +14,31 @@ SRC = $(BASEDIR)/src
 CPP = $(wildcard $(SRC)/*.cpp) $(wildcard $(SRC)/*/*.cpp)
 LIBCPP = $(wildcard $(INCLUDE)/*/*.cpp)
 
-# Target
-TARGET = maf_stats
-
-# Variables
-OBJS = $(addprefix $(BUILD)/, $(notdir $(CPP:.cpp=.o)))
-LIBOBJS = $(LIBCPP:.cpp=.o)
+# Targets
+TARGETS = test
 
 # Rules
+all: init $(TARGETS)
 
-all: init $(TARGET)
+test: $(SRC)/test.cpp $(SRC)/maf_parser.cpp $(INCLUDE)/docopt/docopt.cpp
+	$(CC) $(CFLAGS) -I $(INCLUDE) -o $(BIN)/test $^ $(LDFLAGS)
 
-print-%: ; @echo $* = $($*)
+# $(TARGET): $(OBJS) $(LIBOBJS)
+# 	$(CC) $(CFLAGS) -I $(INCLUDE) -o $(BIN)/$(TARGET) $^ $(LDFLAGS)
 
-$(TARGET): $(OBJS) $(LIBOBJS)
-	$(CC) $(CFLAGS) -I $(INCLUDE) -o $(BIN)/$(TARGET) $^ $(LDFLAGS)
+# $(BUILD)/%.o: $(SRC)/%.cpp
+# 	$(CC) $(CFLAGS) -I $(INCLUDE) -c -o $@ $^
 
-$(BUILD)/%.o: $(SRC)/%.cpp
-	$(CC) $(CFLAGS) -I $(INCLUDE) -c -o $@ $^
-
-$(LIBBUILD)/%.o: $(INCLUDE)/*/%.cpp
-	$(CC) $(CFLAGS) -I $(INCLUDE) -c -o $@ $^
+# $(LIBBUILD)/%.o: $(INCLUDE)/*/%.cpp
+# 	$(CC) $(CFLAGS) -I $(INCLUDE) -c -o $@ $^
 
 clean:
 	@rm -rf $(BUILD)/*.o
-	@rm -rf $(BIN)/$(TARGET)
+	@rm -rf $(BIN)/$(TARGETS)
 	@rm -rf $(INCLUDE)/*/*.o
 
 init:
 	@mkdir -p $(BUILD) $(BUILD)
 	@mkdir -p $(BIN) $(BIN)
 
-rebuild: clean $(TARGET)
+rebuild: clean $(TARGETS)

@@ -1,6 +1,6 @@
 #include "add_missing_region.h"
 
-void add_missing_regions(Parameters& parameters) {
+int main(int argc, char *argv[]) {
 
     // Open input file
     std::ifstream maf_file;

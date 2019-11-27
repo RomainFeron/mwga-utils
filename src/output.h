@@ -1,7 +1,7 @@
 #pragma once
 #include <iomanip>
 #include <sstream>
-#include "parameters.h"
+#include "cli.h"
 #include "utils.h"
 
 void output_alignability_table(const Parameters& parameters, const std::unordered_map<std::string, std::vector<BaseData>>& metrics);
