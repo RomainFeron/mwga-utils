@@ -1,50 +1,55 @@
 #include "maf_parser.h"
 
 void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& queue_mutex, bool& parsing_ended) {
+    /* Parse a MAF file and store alignment blocks in a queue shared by processing threads.
+     * Each sequence in a block is stored in a MafRecord struct, and each block is stored in a MafBlock struct.
+     * Blocks are first stored in a temporary queue which is merged with the shared queue every 1000 blocks.
+     */
 
-    char buffer[65536];
-    long k = 0;
-    char previous_char = ' ';
-    std::string temp = "";
-    uint field_n = 0, blocks_n = 0;
-    bool new_line = true, new_block = false;
-    MafRecord maf_record;
-    MafBlock maf_block;
-    std::vector<MafBlock> tmp_queue(1000);
+    char buffer[65536];  // Input buffer where file is read and stored
+    long k = 0;  // Real size of the block that was read (for iterating over the buffer)
+    char previous_char = ' ';  // Store the last character processed from the buffer
+    std::string temp = "";  // Store the current field string
+    uint field_n = 0, blocks_n = 0;  // Fields and blocks counters
+    bool new_line = true, new_block = false;  // Flags for new line and new block
+    MafRecord maf_record;  // Structure storing record data (i.e. single sequence within block)
+    MafBlock maf_block;  // Structure storing block data
+    std::vector<MafBlock> tmp_queue(1000);  // Temporary block queue to avoid locking the shared blocks queue too often
 
     do {
 
+        // Read a chunk of the maf file into a buffer and get the real length of this chunk
         maf_file.read(buffer, sizeof(buffer));
         k = maf_file.gcount();
 
-        for (uint i=0; i<k; ++i) {
+        for (uint i=0; i<k; ++i) {  // Iterate over data in buffer
 
-            // Read the buffer character by character
+            // Process a single character
             switch(buffer[i]) {
 
                 case ' ':  // Fields are delimited by varying number of spaces
-                    if (previous_char != ' ') {  // If previous character was not a space, we save the field to the current record
+                    if (previous_char != ' ') {  // If previous character was not a space, we reached a delimiter and we save the field to the current record
                         switch (field_n) {
                             case 1:
-                                maf_record.source = temp;
+                                maf_record.source = temp;  // Second field is the source (assembly + contig)
                                 break;
                             case 2:
-                                maf_record.start = static_cast<uint>(fast_stoi(temp.c_str()));
+                                maf_record.start = static_cast<uint>(fast_stoi(temp.c_str()));  // Third field is the start of this block in this assembly
                                 break;
                             case 3:
-                                maf_record.length = static_cast<uint>(fast_stoi(temp.c_str()));
+                                maf_record.length = static_cast<uint>(fast_stoi(temp.c_str()));  // Third field is the length of this block in this assembly
                                 break;
                             case 4:
-                                maf_record.strand = temp[0];
+                                maf_record.strand = temp[0];  // Fourth field is the strand of this block in this assembly
                                 break;
                             case 5:
-                                maf_record.source_length = static_cast<uint>(fast_stoi(temp.c_str()));
+                                maf_record.source_length = static_cast<uint>(fast_stoi(temp.c_str()));  // Fifth field is the length of the contig containing this block in this assembly
                                 break;
                             default:
                                 break;
                         }
                         ++field_n;
-                        temp = "";
+                        temp = "";  // Reset string storing field data as we finished processing a field
                     }
                     break;
 
@@ -55,7 +60,7 @@ void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& 
                         new_block = false;
                     }
 
-                    if (field_n == 6) { // This line was a MAF record
+                    if (field_n == 6) { // This line was a MAF record (there are only 7 fields, 0-based indexing)
                         maf_record.sequence = temp;  // Add sequence to record
                         maf_block.records.push_back(maf_record); // Add record to current block
                         ++maf_block.n_records;
@@ -63,15 +68,15 @@ void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& 
 
                     if (new_line) { // This line is empty (previous character was already '\n')
                         tmp_queue[blocks_n % 1000] = maf_block;  // Empty line means end of a block, we add it to the queue
-                        maf_block.records.resize(0);
+                        maf_block.records.resize(0);  // Reset record data
                         maf_block.n_records = 0;
                         ++blocks_n;
-                        if (blocks_n % 10000 == 0) {
-                            std::cerr << "Processed " << blocks_n / 1000 << " K. blocks" << std::endl;
+                        if (blocks_n % 1000 == 0) {  // Merge temporary queue with shared queue after 1000 blocks
+                            if (blocks_n % 10000 == 0) std::cerr << "Processed " << blocks_n / 1000 << " K. blocks" << std::endl;
                             queue_mutex.lock();
                             for (auto block: tmp_queue) blocks_queue.push(block);
                             queue_mutex.unlock();
-                            tmp_queue.resize(0);
+                            tmp_queue.resize(0);  // Reset temporary queue
                             tmp_queue.resize(1000);
                         }
                     }
@@ -87,7 +92,7 @@ void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& 
 
                     if (new_line) {
                         switch (buffer[i]) {
-                            case 'a':
+                            case 'a':  // Line starting with 'a' marks the beginning of a block
                                 new_block = true;
                                 break;
                             default:
@@ -106,18 +111,22 @@ void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& 
 
     } while (maf_file);
 
+    // Add the final blocks to the shared queue
     queue_mutex.lock();
     for (auto block: tmp_queue) {
         if (block.n_records > 0) blocks_queue.push(block);
     }
     queue_mutex.unlock();
 
-    parsing_ended = true;
+    parsing_ended = true;  // Shared flag indicating that the parsing is finished
 }
 
 
 
 std::vector<MafBlock> get_batch(BlocksQueue& blocks_queue, std::mutex& queue_mutex, ulong batch_size) {
+    /* Get a batch of <batch_size> blocks from the shared queue.
+     * The batch is stored as a vector of blocks. Extracted blocks are removed from the shared queue.
+     */
 
     queue_mutex.lock();
 
