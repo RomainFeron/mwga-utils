@@ -1,6 +1,4 @@
-#include <thread>
 #include "metrics.h"
-#include "maf_parser.h"
 
 
 static const char USAGE[] =
@@ -10,19 +8,20 @@ R"(Generate wig files with base metrics from a MAF file.
       metrics <maf_file> [-p <prefix> -t <threads>]
 
     Options:
-      <maf_file>    Path to a MAF file.
-      -p <prefix>   Prefix for output wig files [default: metrics]
-      -t <threads>  Number of threads to use [default: 1].
-      -h --help     Show this screen.
+      <maf_file>       Path to a MAF file.
+      -p <prefix>      Prefix for output wig files [default: metrics]
+      -n <assemblies>  Manually specify the number of assemblies in the alignment; if not, it is computed from the MAF [default: 0]
+      -t <threads>     Number of threads to use [default: 1].
+      -h --help        Show this screen.
 )";
 
 
-void processor(BlocksQueue& blocks_queue, std::mutex& queue_mutex, std::mutex& results_mutex, bool& parsing_ended, Metric& alignability, ulong batch_size = 100) {
+void processor(BlocksQueue& blocks_queue, std::mutex& queue_mutex, std::mutex& results_mutex, bool& parsing_ended, Metrics& metrics, ulong batch_size) {
 
     uint pos = 0;
     size_t sep_pos = 0;
     std::string scaffold = "";
-    std::vector<uint> tmp_metric;
+    std::vector<uint> tmp_alignability, tmp_identity;
     std::vector<MafBlock> batch;
     bool keep_going = true;
 
@@ -32,23 +31,27 @@ void processor(BlocksQueue& blocks_queue, std::mutex& queue_mutex, std::mutex& r
             for (auto block: batch) {
                 sep_pos = block.records[0].source.find(".");
                 scaffold = block.records[0].source.substr(sep_pos + 1);
-                tmp_metric.resize(0);
-                tmp_metric.resize(block.records[0].length);
+                tmp_alignability.resize(0);
+                tmp_alignability.resize(block.records[0].length);
+                tmp_identity.resize(0);
+                tmp_identity.resize(block.records[0].length);
                 pos = 0;
-                for (uint i=0; i<block.records[0].sequence.size(); ++i) {
-                    if (block.records[0].sequence[i] != '-') {
-                        for (auto record: block.records) {
-                            if (record.sequence[i] != '-') ++tmp_metric[pos];
+                for (uint i=0; i<block.records[0].sequence.size(); ++i) {  // Iterate over all positions in ref assembly for this block
+                    if (block.records[0].sequence[i] != '-') {  // Exclude positions with gaps in ref assembly
+                        for (auto record: block.records) {  // Iterate over all assemblies
+                            if (record.sequence[i] != '-') ++tmp_alignability[pos];  // If no gap, position was aligned in this assembly
+                            if (record.sequence[i] == block.records[0].sequence[i]) ++tmp_identity[pos];  // Check if ref and non-ref have the same nucleotide at this position
                         }
                         ++pos;
                     }
                 }
                 results_mutex.lock();
                 for (uint i=0; i<block.records[0].length; ++i) {
-                    if (alignability.find(scaffold) == alignability.end()) {
-                        alignability[scaffold].resize(block.records[0].source_length);
+                    if (metrics.find(scaffold) == metrics.end()) {
+                        metrics[scaffold].resize(block.records[0].source_length);
                     }
-                    alignability[scaffold][block.records[0].start + i] += tmp_metric[i];
+                    metrics[scaffold][block.records[0].start + i].alignability += tmp_alignability[i];
+                    metrics[scaffold][block.records[0].start + i].identity += tmp_identity[i];
                 }
                 results_mutex.unlock();
             }
@@ -60,6 +63,22 @@ void processor(BlocksQueue& blocks_queue, std::mutex& queue_mutex, std::mutex& r
 }
 
 
+
+std::ofstream open_ofile(std::string& output_file_path) {
+    std::ofstream output_file;
+    output_file.open(output_file_path);
+    if (not output_file.is_open()) {
+        std::cerr << "Error opening wig file <" << output_file_path << ">." << std::endl;
+        exit(1);
+    }
+    // Format floating point in output stream to show 3 significant digits
+    output_file << std::fixed << std::showpoint;
+    output_file << std::setprecision(3);
+    return output_file;
+}
+
+
+
 int main(int argc, char *argv[]) {
 
     std::map<std::string, docopt::value> args = docopt::docopt(USAGE, { argv + 1, argv + argc }, true, "Parser 0.1");
@@ -68,6 +87,7 @@ int main(int argc, char *argv[]) {
     uint n_threads = static_cast<uint>(std::stoi(args["-t"].asString()));
 
     std::string alignability_wig_path = prefix + "_alignability.wig";
+    std::string identity_wig_path = prefix + "_identity.wig";
 
     // Open input file
     std::ifstream maf_file = check_open(maf_file_path);
@@ -76,33 +96,34 @@ int main(int argc, char *argv[]) {
     BlocksQueue blocks_queue;
     std::mutex queue_mutex, results_mutex;
 
-    std::thread parsing_thread(maf_parser, std::ref(maf_file), std::ref(blocks_queue), std::ref(queue_mutex), std::ref(parsing_ended));
+    uint n_assemblies = 0;
 
-    Metric alignability;
+    std::thread parsing_thread(maf_parser, std::ref(maf_file), std::ref(blocks_queue), std::ref(queue_mutex), std::ref(parsing_ended), std::ref(n_assemblies));
+
+    Metrics metrics;
 
     std::vector<std::thread> processing_threads;
     for (uint i=0; i < n_threads; ++i) {
-        processing_threads.push_back(std::thread(processor, std::ref(blocks_queue), std::ref(queue_mutex), std::ref(results_mutex), std::ref(parsing_ended), std::ref(alignability), 100));
+        processing_threads.push_back(std::thread(processor, std::ref(blocks_queue), std::ref(queue_mutex), std::ref(results_mutex), std::ref(parsing_ended), std::ref(metrics), 100));
     }
 
     parsing_thread.join();
     for (auto &t: processing_threads) t.join();
 
-    std::cerr << "Generating alignability wig file ..." << std::endl;
-
-    // Open wig file
-    std::ofstream output_file;
-    output_file.open(alignability_wig_path);
-    if (not output_file.is_open()) {
-        std::cerr << "Error opening wig file <" << alignability_wig_path << ">." << std::endl;
-        exit(1);
-    }
-
-    // Output the data
-    for (auto& scaffold: alignability) {
-        output_file << "fixedStep chrom=" << scaffold.first << " start=1 step=1\n";
+    // Generate wig files
+    std::cerr << "Generating wig files ..." << std::endl;
+    std::ofstream alignability_wig = open_ofile(alignability_wig_path);
+    std::ofstream identity_wig = open_ofile(identity_wig_path);
+    std::string step_header = "";
+    for (auto& scaffold: metrics) {
+        // Write header for new scaffold
+        step_header = "fixedStep chrom=" + scaffold.first + " start=1 step=1\n";
+        alignability_wig << step_header;
+        identity_wig << step_header;
+        // Write values for each position in the scaffold
         for (auto& pos: scaffold.second) {
-            output_file << pos << "\n";
+            alignability_wig << static_cast<float>(pos.alignability) / n_assemblies << "\n";
+            identity_wig << static_cast<float>(pos.identity) / n_assemblies << "\n";
         }
     }
 
