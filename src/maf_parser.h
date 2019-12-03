@@ -1,6 +1,6 @@
 #pragma once
-#include <queue>
 #include <mutex>
+#include <queue>
 #include "docopt/docopt.h"
 #include "utils.h"
 
@@ -22,6 +22,6 @@ struct MafBlock {
 
 typedef std::queue<MafBlock> BlocksQueue;
 
-void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& queue_mutex, bool& parsing_ended);
+uint maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& queue_mutex, bool& parsing_ended);
 
 std::vector<MafBlock> get_batch(BlocksQueue& blocks_queue, std::mutex& queue_mutex, ulong batch_size=1000);
