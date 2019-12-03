@@ -45,7 +45,6 @@ void processor(BlocksQueue& blocks_queue, std::mutex& queue_mutex, std::mutex& r
                 }
                 results_mutex.lock();
                 for (uint i=0; i<block.records[0].length; ++i) {
-                    if (tmp_metric[i] > 3) std::cout << tmp_metric[i] << std::endl;
                     if (alignability.find(scaffold) == alignability.end()) {
                         alignability[scaffold].resize(block.records[0].source_length);
                     }

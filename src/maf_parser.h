@@ -15,7 +15,7 @@ struct MafRecord {
 };
 
 struct MafBlock {
-    float score = 0.0;
+    std::string score = "";
     std::vector<MafRecord> records;
     uint n_records = 0;
 };

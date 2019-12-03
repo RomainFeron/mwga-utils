@@ -51,7 +51,7 @@ void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& 
                 case '\n':
 
                     if (new_block) {
-                        maf_block.score = std::stof(temp.substr(6)); // Save block score
+                        maf_block.score = temp.substr(6); // Save block score
                         new_block = false;
                     }
 
@@ -66,7 +66,7 @@ void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& 
                         maf_block.records.resize(0);
                         maf_block.n_records = 0;
                         ++blocks_n;
-                        if (blocks_n % 1000 == 0) {
+                        if (blocks_n % 10000 == 0) {
                             std::cerr << "Processed " << blocks_n / 1000 << " K. blocks" << std::endl;
                             queue_mutex.lock();
                             for (auto block: tmp_queue) blocks_queue.push(block);
