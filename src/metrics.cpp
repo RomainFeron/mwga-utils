@@ -5,7 +5,7 @@ static const char USAGE[] =
 R"(Generate wig files with base metrics from a MAF file.
 
     Usage:
-      metrics <maf_file> [-p <prefix> -t <threads>]
+      metrics <maf_file> [-p <prefix> -t <threads> -n <assemblies>]
 
     Options:
       <maf_file>       Path to a MAF file.
@@ -85,6 +85,7 @@ int main(int argc, char *argv[]) {
     std::string maf_file_path = args["<maf_file>"].asString();
     std::string prefix = args["-p"].asString();
     uint n_threads = static_cast<uint>(std::stoi(args["-t"].asString()));
+    uint n_assemblies = static_cast<uint>(std::stoi(args["-n"].asString()));
 
     std::string alignability_wig_path = prefix + "_alignability.wig";
     std::string identity_wig_path = prefix + "_identity.wig";
@@ -96,9 +97,8 @@ int main(int argc, char *argv[]) {
     BlocksQueue blocks_queue;
     std::mutex queue_mutex, results_mutex;
 
-    uint n_assemblies = 0;
-
-    std::thread parsing_thread(maf_parser, std::ref(maf_file), std::ref(blocks_queue), std::ref(queue_mutex), std::ref(parsing_ended), std::ref(n_assemblies));
+    uint n_assemblies_maf = 0;
+    std::thread parsing_thread(maf_parser, std::ref(maf_file), std::ref(blocks_queue), std::ref(queue_mutex), std::ref(parsing_ended), std::ref(n_assemblies_maf));
 
     Metrics metrics;
 
@@ -109,6 +109,8 @@ int main(int argc, char *argv[]) {
 
     parsing_thread.join();
     for (auto &t: processing_threads) t.join();
+
+    if (n_assemblies == 0) n_assemblies = n_assemblies_maf;
 
     // Generate wig files
     std::cerr << "Generating wig files ..." << std::endl;
