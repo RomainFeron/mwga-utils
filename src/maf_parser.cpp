@@ -9,7 +9,7 @@ void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& 
     char buffer[65536];  // Input buffer where file is read and stored
     long k = 0;  // Real size of the block that was read (for iterating over the buffer)
     char previous_char = ' ';  // Store the last character processed from the buffer
-    std::string temp = "";  // Store the current field string
+    std::string temp = "", comment = "";  // Store the current field string
     uint field_n = 0, blocks_n = 0;  // Fields and blocks counters
     bool new_line = true, new_block = false;  // Flags for new line and new block
     MafRecord maf_record;  // Structure storing record data (i.e. single sequence within block)
@@ -17,6 +17,7 @@ void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& 
     std::vector<MafBlock> tmp_queue(1000);  // Temporary block queue to avoid locking the shared blocks queue too often
 
     n_assemblies = 0;  // Number of assemblies in the MAF file
+    bool in_comment = false;
 
     do {
 
@@ -53,6 +54,7 @@ void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& 
                         ++field_n;
                         temp = "";  // Reset string storing field data as we finished processing a field
                     }
+                    if (in_comment) comment += buffer[i];
                     break;
 
                 case '\n':
@@ -86,9 +88,18 @@ void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& 
 
                     new_line = true;
 
+                    if (in_comment and comment != "##eof maf") std::cout << comment << std::endl;  // Assumption: this is safe because all comments should be within the first 1000 lines of the MAF
+
                     // Reset variables
                     field_n = 0;
                     temp = "";
+                    in_comment = false;
+                    comment = "";
+                    break;
+
+                case '#':
+                    in_comment = true;
+                    comment += buffer[i];
                     break;
 
                 default:
@@ -105,7 +116,7 @@ void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& 
                     } else {
                         temp += buffer[i];
                     }
-
+                    if (in_comment) comment += buffer[i];
                     break;
             }
 

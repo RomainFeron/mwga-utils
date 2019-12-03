@@ -15,25 +15,16 @@ CPP = $(wildcard $(SRC)/*.cpp) $(wildcard $(SRC)/*/*.cpp)
 LIBCPP = $(wildcard $(INCLUDE)/*/*.cpp)
 
 # Targets
-TARGETS = metrics
+TARGETS = metrics missing_regions
 
 # Rules
 all: init $(TARGETS)
 
-test: $(SRC)/test.cpp $(SRC)/maf_parser.cpp $(INCLUDE)/docopt/docopt.cpp
-	$(CC) $(CFLAGS) -I $(INCLUDE) -o $(BIN)/test $^ $(LDFLAGS)
-
 metrics: $(SRC)/metrics.cpp $(SRC)/maf_parser.cpp $(INCLUDE)/docopt/docopt.cpp
 	$(CC) $(CFLAGS) -I $(INCLUDE) -o $(BIN)/metrics $^ $(LDFLAGS)
 
-# $(TARGET): $(OBJS) $(LIBOBJS)
-# 	$(CC) $(CFLAGS) -I $(INCLUDE) -o $(BIN)/$(TARGET) $^ $(LDFLAGS)
-
-# $(BUILD)/%.o: $(SRC)/%.cpp
-# 	$(CC) $(CFLAGS) -I $(INCLUDE) -c -o $@ $^
-
-# $(LIBBUILD)/%.o: $(INCLUDE)/*/%.cpp
-# 	$(CC) $(CFLAGS) -I $(INCLUDE) -c -o $@ $^
+missing_regions: $(SRC)/missing_regions.cpp $(SRC)/maf_parser.cpp $(INCLUDE)/docopt/docopt.cpp
+	$(CC) $(CFLAGS) -I $(INCLUDE) -o $(BIN)/missing_regions $^ $(LDFLAGS)
 
 clean:
 	@rm -rf $(BUILD)/*.o
