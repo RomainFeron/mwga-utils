@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
     std::mutex queue_mutex, results_mutex;
 
     uint n_assemblies_maf = 0;
-    std::thread parsing_thread(maf_parser, std::ref(maf_file), std::ref(blocks_queue), std::ref(queue_mutex), std::ref(parsing_ended), std::ref(n_assemblies_maf));
+    std::thread parsing_thread(maf_parser, std::ref(maf_file), std::ref(blocks_queue), std::ref(queue_mutex), std::ref(parsing_ended), std::ref(n_assemblies_maf), false);
 
     Metrics metrics;
 

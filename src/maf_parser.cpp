@@ -1,6 +1,6 @@
 #include "maf_parser.h"
 
-void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& queue_mutex, bool& parsing_ended, uint& n_assemblies) {
+void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& queue_mutex, bool& parsing_ended, uint& n_assemblies, bool print_comments) {
     /* Parse a MAF file and store alignment blocks in a queue shared by processing threads.
      * Each sequence in a block is stored in a MafRecord struct, and each block is stored in a MafBlock struct.
      * Blocks are first stored in a temporary queue which is merged with the shared queue every 1000 blocks.
@@ -88,7 +88,7 @@ void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& 
 
                     new_line = true;
 
-                    if (in_comment and comment != "##eof maf") std::cout << comment << std::endl;  // Assumption: this is safe because all comments should be within the first 1000 lines of the MAF
+                    if (print_comments and in_comment and comment != "##eof maf") std::cout << comment << std::endl;  // Assumption: this is safe because all comments should be within the first 1000 lines of the MAF
 
                     // Reset variables
                     field_n = 0;
