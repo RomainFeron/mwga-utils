@@ -15,7 +15,7 @@ CPP = $(wildcard $(SRC)/*.cpp) $(wildcard $(SRC)/*/*.cpp)
 LIBCPP = $(wildcard $(INCLUDE)/*/*.cpp)
 
 # Targets
-TARGETS = metrics missing_regions single_cov
+TARGETS = metrics missing_regions single_cov stats
 
 # Rules
 all: init $(TARGETS)
@@ -28,6 +28,9 @@ missing_regions: $(SRC)/missing_regions.cpp $(SRC)/maf_parser.cpp $(INCLUDE)/doc
 
 single_cov: $(SRC)/single_cov.cpp $(SRC)/maf_parser.cpp $(INCLUDE)/docopt/docopt.cpp
 	$(CC) $(CFLAGS) -I $(INCLUDE) -o $(BIN)/single_coverage $^ $(LDFLAGS)
+
+stats: $(SRC)/stats.cpp $(SRC)/maf_parser.cpp $(INCLUDE)/docopt/docopt.cpp
+	$(CC) $(CFLAGS) -I $(INCLUDE) -o $(BIN)/stats $^ $(LDFLAGS)
 
 clean:
 	@rm -rf $(BUILD)/*.o
