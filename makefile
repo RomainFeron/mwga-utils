@@ -2,7 +2,7 @@
 CC = g++
 OPTCFLAGS = -O2
 CFLAGS = -Wall -std=gnu++11 $(OPTCFLAGS)
-LDFLAGS = -pthread -static-libstdc++
+LDFLAGS = -pthread -lstdc++ -lm
 
 # Directory organisation
 BASEDIR = .
