@@ -2,17 +2,14 @@
 CC = g++
 OPTCFLAGS = -O2
 CFLAGS = -Wall -std=gnu++11 $(OPTCFLAGS)
-LDFLAGS = -pthread -static-libstdc++ -lz
+LDFLAGS = -pthread -static-libstdc++
 
 # Directory organisation
 BASEDIR = .
 BIN = $(BASEDIR)/bin
 BUILD = $(BASEDIR)/build
-LIBBUILD = $(BASEDIR)/build
 INCLUDE = $(BASEDIR)/include
 SRC = $(BASEDIR)/src
-CPP = $(wildcard $(SRC)/*.cpp) $(wildcard $(SRC)/*/*.cpp)
-LIBCPP = $(wildcard $(INCLUDE)/*/*.cpp)
 
 # Targets
 TARGETS = metrics missing_regions single_cov stats
