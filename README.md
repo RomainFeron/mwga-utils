@@ -1,5 +1,7 @@
 # Collection of utilities for processing Multispecies Whole Genome Alignments
 
+**mwga-utils** is a collection of utilities developed to process Multiple Alignment Format (MAF) files. It was developed specifically as part of the mwga-snake pipeline to compute Multispecies Whole Genome Alignments, but it should be applicable to any MAF file that follows the MultiZ output format.
+
 ## Installation
 
 Clone the repository and run make:
