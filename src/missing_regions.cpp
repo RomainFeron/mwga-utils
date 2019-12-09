@@ -16,7 +16,6 @@ R"(Add regions from the reference genome that are missing from a MAF file.
 
 void processor(BlocksQueue& blocks_queue, std::mutex& queue_mutex, MafCoverage& maf_coverage, bool& parsing_ended, ulong batch_size) {
 
-    size_t sep_pos = 0;
     std::string scaffold = "";
     std::vector<MafBlock> batch;
     bool keep_going = true;
@@ -25,17 +24,16 @@ void processor(BlocksQueue& blocks_queue, std::mutex& queue_mutex, MafCoverage& 
         batch = get_batch(blocks_queue, queue_mutex, batch_size);
         if (batch.size() > 0) {
             for (auto block: batch) {
-                sep_pos = block.records[0].source.find(".");
-                scaffold = block.records[0].source.substr(sep_pos + 1);
-                if (maf_coverage.find(scaffold) == maf_coverage.end()) {
-                    maf_coverage[scaffold].resize(block.records[0].source_length);
-                }
+                scaffold = block.records[0].source;
+//                if (maf_coverage.find(scaffold) == maf_coverage.end()) {
+//                    maf_coverage[scaffold].resize(block.records[0].source_length);
+//                }
                 for (uint i=0; i<block.records[0].length; ++i) {
                     maf_coverage[scaffold][block.records[0].start + i] = 1;
                 }
                 std::cout << "a score=" << block.score << "\n";
                 for (auto record: block.records) std::cout << "s " << record.source << " " << record.start << " " << record.length << " " << record.strand << " "
-                                                            << record.source_length << " " << record.sequence << "\n";
+                                                           << record.source_length << " " << record.sequence << "\n";
                 std::cout << "\n";
             }
         }
@@ -69,13 +67,14 @@ int main(int argc, char *argv[]) {
             }
             header = line.substr(1);
             tmp = split(header, ":");
-            header = tmp[1];
+            header = tmp[0] + "." + tmp[1];
             sequence = "";
         } else {
             sequence += line;
         }
     }
     reference[header] = sequence;
+    maf_coverage[header] = std::vector<bool>(sequence.size(), 0);
     reference_file.close();
 
     // Process MAF file
@@ -95,7 +94,6 @@ int main(int argc, char *argv[]) {
     maf_file.close();
 
     uint start = 0, length = 0, scaffold_size = 0;
-    std::string scaffold_name = "";
     bool new_sequence = true;
 
     std::cerr << "Exporting regions absent from the MAF file" << std::endl;
@@ -105,15 +103,14 @@ int main(int argc, char *argv[]) {
         start = 0;
         length = 0;
         new_sequence = true;
-        scaffold_name = scaffold.first;
         scaffold_size = static_cast<uint>(scaffold.second.size());
         for (uint i=0; i<scaffold_size; ++i) {
-            if (scaffold.second[i] or i == scaffold.second.size() - 1) {
+            if (scaffold.second[i] or i == scaffold_size - 1) {
                 if (not new_sequence) {
-                    sequence = reference[scaffold_name].substr(start, length);
+                    sequence = reference[scaffold.first].substr(start, length);
                     std::transform(sequence.begin(), sequence.end(), sequence.begin(), ::toupper);
                     std::cout << "a score=NA\n";
-                    std::cout << "s " << scaffold_name << " " << start << " " << length << " + " << scaffold_size << " " << sequence << "\n\n";
+                    std::cout << "s " << scaffold.first << " " << start << " " << length << " + " << scaffold_size << " " << sequence << "\n\n";
                 }
                 sequence = "";
                 start = 0;
