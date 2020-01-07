@@ -66,8 +66,6 @@ int main(int argc, char *argv[]) {
                 maf_coverage[header] = std::vector<bool>(sequence.size(), 0);
             }
             header = line.substr(1);
-            tmp = split(header, ":");
-            header = tmp[0] + "." + tmp[1];
             sequence = "";
         } else {
             sequence += line;
