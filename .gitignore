@@ -79,3 +79,4 @@ bin/
 tests*
 callgrind*
 *.pro
+CMakeLists.txt
