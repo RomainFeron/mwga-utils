@@ -84,6 +84,7 @@ void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& 
                             tmp_queue.resize(0);  // Reset temporary queue
                             tmp_queue.resize(1000);
                         }
+
                     }
 
                     new_line = true;

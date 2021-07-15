@@ -13,20 +13,27 @@ SRC = $(BASEDIR)/src
 
 # Targets
 TARGETS = metrics missing_regions single_cov stats
+# TARGETS = metrics
 
 # Rules
 all: init $(TARGETS)
 
-metrics: $(SRC)/metrics.cpp $(SRC)/maf_parser.cpp $(INCLUDE)/docopt/docopt.cpp
+$(INCLUDE)/docopt/docopt.o: $(INCLUDE)/docopt/docopt.cpp
+	$(CC) $(CFLAGS) -I $(INCLUDE) -c -o $@ $<
+
+$(BUILD)/%.o: $(SRC)/%.cpp
+	$(CC) $(CFLAGS) -I $(INCLUDE) -c -o $@ $<
+
+metrics: $(BUILD)/metrics.o $(BUILD)/maf_parser.o $(INCLUDE)/docopt/docopt.o
 	$(CC) $(CFLAGS) -I $(INCLUDE) -o $(BIN)/metrics $^ $(LDFLAGS)
 
-missing_regions: $(SRC)/missing_regions.cpp $(SRC)/maf_parser.cpp $(INCLUDE)/docopt/docopt.cpp
+missing_regions: $(BUILD)/missing_regions.o $(BUILD)/maf_parser.o $(INCLUDE)/docopt/docopt.o
 	$(CC) $(CFLAGS) -I $(INCLUDE) -o $(BIN)/missing_regions $^ $(LDFLAGS)
 
-single_cov: $(SRC)/single_cov.cpp $(SRC)/maf_parser.cpp $(INCLUDE)/docopt/docopt.cpp
-	$(CC) $(CFLAGS) -I $(INCLUDE) -o $(BIN)/single_coverage $^ $(LDFLAGS)
+single_cov: $(BUILD)/single_cov.o $(BUILD)/maf_parser.o $(INCLUDE)/docopt/docopt.o
+	$(CC) $(CFLAGS) -I $(INCLUDE) -o $(BIN)/single_cov $^ $(LDFLAGS)
 
-stats: $(SRC)/stats.cpp $(SRC)/maf_parser.cpp $(INCLUDE)/docopt/docopt.cpp
+stats: $(BUILD)/stats.o $(BUILD)/maf_parser.o $(INCLUDE)/docopt/docopt.o
 	$(CC) $(CFLAGS) -I $(INCLUDE) -o $(BIN)/stats $^ $(LDFLAGS)
 
 clean:
