@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
-project(docopt.cpp VERSION 0.6.1)
+project(docopt.cpp VERSION 0.6.2)
 
 include(GNUInstallDirs)
 
@@ -18,11 +18,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 if(NOT CMAKE_CXX_STANDARD OR CMAKE_CXX_STANDARD LESS 11)
 	set(CMAKE_CXX_STANDARD 11)
-endif()
-
-# Suppression of "unknown pragma" warning on GCC
-if(CMAKE_COMPILER_IS_GNUCXX)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas") # Code uses #pragma mark
 endif()
 
 #============================================================================
@@ -55,6 +50,10 @@ else()
     set_target_properties(docopt_o PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
     add_library(docopt SHARED $<TARGET_OBJECTS:docopt_o>)
+	set_target_properties(docopt PROPERTIES
+			VERSION ${PROJECT_VERSION}
+			SOVERSION ${PROJECT_VERSION_MAJOR}
+			)
     add_library(docopt_s STATIC $<TARGET_OBJECTS:docopt_o>)
 endif()
 
@@ -129,6 +128,9 @@ include(CMakePackageConfigHelpers)
 write_basic_package_version_file("${PROJECT_BINARY_DIR}/docopt-config-version.cmake" COMPATIBILITY SameMajorVersion)
 install(FILES docopt-config.cmake ${PROJECT_BINARY_DIR}/docopt-config-version.cmake DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/docopt")
 install(EXPORT ${export_name} DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/docopt")
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docopt.pc.in ${CMAKE_CURRENT_BINARY_DIR}/docopt.pc @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/docopt.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
 #============================================================================
 # CPack
