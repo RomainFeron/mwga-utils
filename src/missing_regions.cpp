@@ -25,9 +25,6 @@ void processor(BlocksQueue& blocks_queue, std::mutex& queue_mutex, MafCoverage& 
         if (batch.size() > 0) {
             for (auto block: batch) {
                 scaffold = block.records[0].source;
-//                if (maf_coverage.find(scaffold) == maf_coverage.end()) {
-//                    maf_coverage[scaffold].resize(block.records[0].source_length);
-//                }
                 for (uint i=0; i<block.records[0].length; ++i) {
                     maf_coverage[scaffold][block.records[0].start + i] = 1;
                 }
@@ -104,6 +101,13 @@ int main(int argc, char *argv[]) {
         scaffold_size = static_cast<uint>(scaffold.second.size());
         for (uint i=0; i<scaffold_size; ++i) {
             if (scaffold.second[i] or i == scaffold_size - 1) {
+                if (i == scaffold_size - 1 and not scaffold.second[i]) {
+                    ++length;  // Need to count the current base as missing from the reference as well
+                    if (new_sequence) {  // Case where only last base in contig is missing
+                        start = i;
+                        new_sequence = false;  // Will be processed for output in next condition
+                    }
+                }
                 if (not new_sequence) {
                     sequence = reference[scaffold.first].substr(start, length);
                     std::transform(sequence.begin(), sequence.end(), sequence.begin(), ::toupper);
