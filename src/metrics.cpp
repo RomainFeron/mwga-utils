@@ -16,7 +16,7 @@ R"(Generate wig files with base metrics from a MAF file.
 )";
 
 
-void processor(BlocksQueue& blocks_queue, std::mutex& queue_mutex, std::mutex& results_mutex, bool& parsing_ended, Metrics& metrics, ulong batch_size) {
+void processor(BlocksQueue& blocks_queue, std::mutex& queue_mutex, std::mutex& results_mutex, bool& parsing_ended, Metrics& metrics, unsigned long batch_size) {
 
     uint pos = 0;
     size_t sep_pos = 0;

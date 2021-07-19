@@ -139,14 +139,14 @@ void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& 
 
 
 
-std::vector<MafBlock> get_batch(BlocksQueue& blocks_queue, std::mutex& queue_mutex, ulong batch_size) {
+std::vector<MafBlock> get_batch(BlocksQueue& blocks_queue, std::mutex& queue_mutex, unsigned long batch_size) {
     /* Get a batch of <batch_size> blocks from the shared queue.
      * The batch is stored as a vector of blocks. Extracted blocks are removed from the shared queue.
      */
 
     queue_mutex.lock();
 
-    ulong batch_size_real = std::min(batch_size, blocks_queue.size());
+    unsigned long batch_size_real = std::min(batch_size, blocks_queue.size());
     std::vector<MafBlock> batch(batch_size_real);
 
     if (batch_size_real > 0) {

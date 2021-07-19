@@ -14,7 +14,7 @@ R"(Add regions from the reference genome that are missing from a MAF file.
 )";
 
 
-void processor(BlocksQueue& blocks_queue, std::mutex& queue_mutex, MafCoverage& maf_coverage, bool& parsing_ended, ulong batch_size) {
+void processor(BlocksQueue& blocks_queue, std::mutex& queue_mutex, MafCoverage& maf_coverage, bool& parsing_ended, unsigned long batch_size) {
 
     std::string scaffold = "";
     std::vector<MafBlock> batch;
