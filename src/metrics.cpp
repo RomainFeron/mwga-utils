@@ -9,7 +9,7 @@ R"(Generate wig files with base metrics from a MAF file.
 
     Options:
       <maf_file>       Path to a MAF file.
-      -p <prefix>      Prefix for output wig files [default: metrics]
+      -p <prefix>      Prefix for output wig files [default: no prefix]
       -n <assemblies>  Manually specify the number of assemblies in the alignment; if not, it is computed from the MAF [default: 0]
       -t <threads>     Number of threads to use [default: 1].
       -h --help        Show this screen.
@@ -84,11 +84,15 @@ int main(int argc, char *argv[]) {
     std::map<std::string, docopt::value> args = docopt::docopt(USAGE, { argv + 1, argv + argc }, true, "Parser 0.1");
     std::string maf_file_path = args["<maf_file>"].asString();
     std::string prefix = args["-p"].asString();
+    // Set empty prefix as default
+    if (prefix == "no prefix") {
+        prefix = "";
+    }
     uint n_threads = static_cast<uint>(std::stoi(args["-t"].asString()));
     uint n_assemblies = static_cast<uint>(std::stoi(args["-n"].asString()));
 
-    std::string alignability_wig_path = prefix + "_alignability.wig";
-    std::string identity_wig_path = prefix + "_identity.wig";
+    std::string alignability_wig_path = prefix + "alignability.wig";
+    std::string identity_wig_path = prefix + "identity.wig";
 
     // Open input file
     std::ifstream maf_file = check_open(maf_file_path);
