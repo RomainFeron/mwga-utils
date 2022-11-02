@@ -24,4 +24,4 @@ typedef std::queue<MafBlock> BlocksQueue;
 
 void maf_parser(std::ifstream& maf_file, BlocksQueue& blocks_queue, std::mutex& queue_mutex, bool& parsing_ended, uint& n_assemblies, bool print_comments=false);
 
-std::vector<MafBlock> get_batch(BlocksQueue& blocks_queue, std::mutex& queue_mutex, ulong batch_size=1000);
+std::vector<MafBlock> get_batch(BlocksQueue& blocks_queue, std::mutex& queue_mutex, unsigned long batch_size=1000);

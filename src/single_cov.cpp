@@ -12,7 +12,7 @@ R"(Check that the each sequence in the reference species is only covered once in
 )";
 
 
-void processor(BlocksQueue& blocks_queue, std::mutex& queue_mutex, RefCoverage& ref_coverage, bool& parsing_ended, ulong batch_size) {
+void processor(BlocksQueue& blocks_queue, std::mutex& queue_mutex, RefCoverage& ref_coverage, bool& parsing_ended, unsigned long batch_size) {
 
     size_t sep_pos = 0;
     std::string scaffold = "";

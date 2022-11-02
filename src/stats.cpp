@@ -14,7 +14,7 @@ R"(Compute a series of statistics on a MAF file:
 )";
 
 
-void processor(BlocksQueue& blocks_queue, std::mutex& queue_mutex, BpAlignedData& bp_aligned, bool& parsing_ended, ulong batch_size) {
+void processor(BlocksQueue& blocks_queue, std::mutex& queue_mutex, BpAlignedData& bp_aligned, bool& parsing_ended, unsigned long batch_size) {
 
     size_t sep_pos = 0;
     std::string scaffold = "", assembly = "";
